@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GloveCare AI - Dashboard</title>
+
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">✦</div>
+
+            <div>
+                <h2>GloveCare <span>AI</span></h2>
+                <p>Multisensor System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-title">
+            MAIN MENU
+        </div>
+
+        <nav class="navigation">
+
+            <a href="#dashboard" class="nav-item active">
+                <span class="nav-icon">⌂</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="#sensors" class="nav-item">
+                <span class="nav-icon">◉</span>
+                <span>Sensor Monitoring</span>
+            </a>
+
+            <a href="#exercises" class="nav-item">
+                <span class="nav-icon">✋</span>
+                <span>Exercises</span>
+            </a>
+
+            <a href="#analysis" class="nav-item">
+                <span class="nav-icon">✦</span>
+                <span>AI Analysis</span>
+            </a>
+
+            <a href="#history" class="nav-item">
+                <span class="nav-icon">◷</span>
+                <span>Session History</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-title system-title">
+            SYSTEM
+        </div>
+
+        <nav class="navigation">
+
+            <a href="#device" class="nav-item">
+                <span class="nav-icon">⌁</span>
+                <span>Glove Device</span>
+            </a>
+
+            <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="connection-card">
+
+                <div class="connection-top">
+                    <span class="connection-dot" id="connectionDot"></span>
+                    <span id="connectionStatus">Waiting for Glove</span>
+                </div>
+
+                <p id="connectionMethod">
+                    USB / Wi-Fi
+                </p>
+
+                <div class="connection-line"></div>
+
+                <div class="connection-info">
+                    <span>Sensor Data</span>
+                    <strong id="sensorDataStatus">WAITING</strong>
+                </div>
+
+            </div>
+
+            <button class="logout-btn" id="logoutBtn">
+                <span>↪</span>
+                Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div class="mobile-menu" id="mobileMenu">
+                ☰
+            </div>
+
+            <div class="page-heading">
+                <p>AI HEALTH MONITORING</p>
+                <h1>Dashboard</h1>
+            </div>
+
+            <div class="topbar-right">
+
+                <div class="live-status">
+                    <span id="systemStatusDot"></span>
+                    <span id="systemStatus">Waiting for Glove</span>
+                </div>
+
+                <div class="notification">
+                    ♢
+                    <span class="notification-dot"></span>
+                </div>
+
+                <div class="profile">
+
+                    <div class="profile-avatar">
+                        A
+                    </div>
+
+                    <div class="profile-text">
+                        <strong>Admin</strong>
+                        <small>Administrator</small>
+                    </div>
+
+                    <span class="profile-arrow">⌄</span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <div class="content">
+
+
+            <section class="hero-card" id="dashboard">
+
+                <div class="hero-left">
+
+                    <div class="hero-label">
+                        <span></span>
+                        LIVE MONITORING
+                    </div>
+
+                    <h2>
+                        Carpal Tunnel<br>
+                        <span>Exercise Monitoring</span>
+                    </h2>
+
+                    <p>
+                        Monitor hand movement, finger contact and wrist
+                        activity using real-time multisensor glove data.
+                    </p>
+
+                    <div class="hero-actions">
+
+                        <button class="primary-btn" id="startExerciseBtn">
+                            <span>▶</span>
+                            Start Exercise Session
+                        </button>
+
+                        <button class="secondary-btn" id="viewSensorsBtn">
+                            View Live Sensors
+                            <span>→</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="hero-right">
+
+                    <div class="hero-orbit orbit-one"></div>
+                    <div class="hero-orbit orbit-two"></div>
+
+                    <div class="hand-visual">
+
+                        <div class="hand-glow"></div>
+
+                        <div class="hand-symbol">
+                            ✋
+                        </div>
+
+                        <div class="finger-line line-one"></div>
+                        <div class="finger-line line-two"></div>
+                        <div class="finger-line line-three"></div>
+
+                    </div>
+
+                    <div class="sensor-floating sensor-float-one">
+                        <span>WRIST PITCH</span>
+                        <strong id="heroWrist">--°</strong>
+                    </div>
+
+                    <div class="sensor-floating sensor-float-two">
+                        <span>TOUCH</span>
+                        <strong id="heroFlexion">-- / 5</strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon purple">
+                        ◉
+                    </div>
+
+                    <div class="stat-content">
+                        <p>SESSION TIME</p>
+                        <h3 id="sessionTime">00:00</h3>
+                        <span class="positive" id="sessionStatus">
+                            ● Session not started
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon cyan">
+                        ✋
+                    </div>
+
+                    <div class="stat-content">
+                        <p>EXERCISES</p>
+                        <h3 id="exerciseCount">0 / 5</h3>
+                        <span class="positive">
+                            Current session
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        ♡
+                    </div>
+
+                    <div class="stat-content">
+                        <p>GLOVE STATUS</p>
+                        <h3 id="gloveStatus">Waiting</h3>
+                        <span class="positive" id="gloveStatusText">
+                            ● No sensor stream
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon orange">
+                        ✦
+                    </div>
+
+                    <div class="stat-content">
+                        <p>AI STATUS</p>
+                        <h3 id="aiStatus">Waiting</h3>
+                        <span class="positive" id="aiStatusText">
+                            ● Model integration pending
+                        </span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="main-grid">
+
+
+                <div class="panel sensor-panel" id="sensors">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <p class="panel-kicker">REAL-TIME DATA</p>
+                            <h2>Multisensor Monitoring</h2>
+                        </div>
+
+                        <div class="live-pill">
+                            <span id="liveSensorDot"></span>
+                            <span id="liveSensorText">WAITING</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sensor-grid">
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Wrist Pitch</span>
+                                <span class="sensor-status">MPU6050</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="wristValue">--</strong>
+                                <span>°</span>
+                            </div>
+
+                            <div class="sensor-bar">
+                                <div id="wristBar" style="width: 0%"></div>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Orientation</span>
+                                <span id="wristRange">--</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Wrist Roll</span>
+                                <span class="sensor-status">MPU6050</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="rollValue">--</strong>
+                                <span>°</span>
+                            </div>
+
+                            <div class="sensor-bar">
+                                <div id="rollBar" style="width: 0%"></div>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Orientation</span>
+                                <span id="rollRange">--</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Acceleration</span>
+                                <span class="sensor-status">MPU6050</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="accelValue">--</strong>
+                                <span>g</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>X</span>
+                                <span id="accelX">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Y</span>
+                                <span id="accelY">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Z</span>
+                                <span id="accelZ">--</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Gyroscope</span>
+                                <span class="sensor-status">MPU6050</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="gyroValue">--</strong>
+                                <span>°/s</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>X</span>
+                                <span id="gyroX">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Y</span>
+                                <span id="gyroY">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Z</span>
+                                <span id="gyroZ">--</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Touch Sensors</span>
+                                <span class="sensor-status">TTP223</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="touchCount">--</strong>
+                                <span>/ 5</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>T1</span>
+                                <span id="touch1">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>T2</span>
+                                <span id="touch2">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>T3</span>
+                                <span id="touch3">--</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="sensor-card">
+
+                            <div class="sensor-top">
+                                <span class="sensor-name">Touch Sensors</span>
+                                <span class="sensor-status">TTP223</span>
+                            </div>
+
+                            <div class="sensor-value">
+                                <strong id="touchActive">--</strong>
+                                <span>active</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>T4</span>
+                                <span id="touch4">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>T5</span>
+                                <span id="touch5">--</span>
+                            </div>
+
+                            <div class="sensor-footer">
+                                <span>Input state</span>
+                                <span id="touchState">--</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel ai-panel" id="analysis">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <p class="panel-kicker">MACHINE LEARNING</p>
+                            <h2>AI Assessment</h2>
+                        </div>
+
+                        <div class="ai-icon">
+                            ✦
+                        </div>
+
+                    </div>
+
+
+                    <div class="ai-score">
+
+                        <div class="score-circle">
+
+                            <div>
+                                <strong id="aiScore">--</strong>
+                                <span id="aiScoreUnit">%</span>
+                            </div>
+
+                        </div>
+
+                        <div class="score-text">
+                            <strong id="predictionName">
+                                Waiting for prediction
+                            </strong>
+
+                            <p id="predictionText">
+                                Real sensor data will be sent to the AI model.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="ai-message">
+
+                        <div class="message-icon" id="aiMessageIcon">
+                            ?
+                        </div>
+
+                        <div>
+                            <strong id="aiMessageTitle">
+                                AI model not connected
+                            </strong>
+
+                            <p id="aiMessageText">
+                                The dashboard is receiving hardware data,
+                                but exercise classification will begin after
+                                the Python AI service is integrated.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="analysis-list">
+
+                        <div>
+                            <span>Sensor stream</span>
+                            <strong class="safe" id="analysisSensor">
+                                Waiting
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>AI model</span>
+                            <strong class="safe" id="analysisModel">
+                                Waiting
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Exercise detection</span>
+                            <strong class="good" id="analysisExercise">
+                                Waiting
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <button class="analysis-btn" id="testFeedbackBtn">
+                        Test Feedback Audio
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <section class="lower-grid">
+
+
+                <div class="panel exercise-panel" id="exercises">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <p class="panel-kicker">THERAPY PROGRAM</p>
+                            <h2>Exercise Progress</h2>
+                        </div>
+
+                        <span class="small-action" id="exerciseNumber">
+                            Exercise 0 / 5
+                        </span>
+
+                    </div>
+
+
+                    <div class="exercise-progress">
+
+                        <div class="exercise-main">
+
+                            <div class="exercise-icon">
+                                ✋
+                            </div>
+
+                            <div>
+                                <h3 id="currentExerciseName">
+                                    No exercise started
+                                </h3>
+
+                                <p id="currentExerciseInstruction">
+                                    Press Start Exercise Session
+                                </p>
+                            </div>
+
+                        </div>
+
+                        <div class="progress-number">
+                            <strong id="exerciseProgressPercent">
+                                0%
+                            </strong>
+
+                            <span>Complete</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="progress-track">
+                        <div id="exerciseProgressBar" style="width: 0%"></div>
+                    </div>
+
+
+                    <div class="exercise-details">
+
+                        <div>
+                            <span>Completed</span>
+                            <strong id="completedExercises">0 / 5</strong>
+                        </div>
+
+                        <div>
+                            <span>Duration</span>
+                            <strong id="currentExerciseTime">00:00</strong>
+                        </div>
+
+                        <div>
+                            <span>Status</span>
+                            <strong class="good" id="currentExerciseStatus">
+                                Waiting
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel history-panel" id="history">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <p class="panel-kicker">ACTIVITY</p>
+                            <h2>Recent Sessions</h2>
+                        </div>
+
+                    </div>
+
+
+                    <div class="session-list">
+
+                        <div class="session-item">
+
+                            <div class="session-icon">
+                                •
+                            </div>
+
+                            <div class="session-info">
+                                <strong>No completed sessions</strong>
+                                <span>Your real exercise sessions will appear here.</span>
+                            </div>
+
+                            <div class="session-score">
+                                <strong>--</strong>
+                                <span>Waiting</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="panel device-panel" id="device">
+
+                <div class="panel-header">
+
+                    <div>
+                        <p class="panel-kicker">HARDWARE</p>
+                        <h2>Glove Device Status</h2>
+                    </div>
+
+                    <div class="device-connected" id="deviceConnection">
+                        <span></span>
+                        Waiting
+                    </div>
+
+                </div>
+
+
+                <div class="device-content">
+
+                    <div class="device-visual">
+                        <div class="device-ring">
+                            ✋
+                        </div>
+                    </div>
+
+
+                    <div class="device-details">
+
+                        <div class="device-row">
+                            <span>Device Name</span>
+                            <strong>GloveCare ESP8266</strong>
+                        </div>
+
+                        <div class="device-row">
+                            <span>Connection</span>
+                            <strong class="safe" id="deviceConnectionType">
+                                Not connected
+                            </strong>
+                        </div>
+
+                        <div class="device-row">
+                            <span>Sensor Source</span>
+                            <strong>
+                                5 TTP223 + MPU6050
+                            </strong>
+                        </div>
+
+                        <div class="battery-track">
+                            <div style="width: 100%"></div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="device-stats">
+
+                        <div>
+                            <span>Touch Sensors</span>
+                            <strong>05</strong>
+                        </div>
+
+                        <div>
+                            <span>IMU</span>
+                            <strong>MPU6050</strong>
+                        </div>
+
+                        <div>
+                            <span>Data</span>
+                            <strong class="safe" id="deviceDataStatus">
+                                Waiting
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="panel settings-panel" id="settings">
+
+                <div class="panel-header">
+
+                    <div>
+                        <p class="panel-kicker">CONFIGURATION</p>
+                        <h2>System Settings</h2>
+                    </div>
+
+                </div>
+
+                <div class="settings-grid">
+
+                    <div class="setting-card">
+                        <span>Notifications</span>
+
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-card">
+                        <span>Live Sensor Updates</span>
+
+                        <label class="switch">
+                            <input
+                                type="checkbox"
+                                id="liveSensorToggle"
+                                checked
+                            >
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-card">
+                        <span>AI Monitoring</span>
+
+                        <label class="switch">
+                            <input
+                                type="checkbox"
+                                id="aiMonitoringToggle"
+                                checked
+                            >
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <footer>
+                <span>GloveCare AI</span>
+                <span>Multisensor Carpal Tunnel Exercise Monitoring System</span>
+                <span>v1.0.0</span>
+            </footer>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>

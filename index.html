@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GloveCare AI - Login</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <div class="login-left">
+
+            <div class="brand">
+                <div class="brand-icon">✦</div>
+                <div>
+                    <h1>GloveCare AI</h1>
+                    <p>Multisensor Glove Monitoring System</p>
+                </div>
+            </div>
+
+            <div class="hero-content">
+                <span class="small-label">AI-POWERED HEALTH MONITORING</span>
+
+                <h2>
+                    Smarter Monitoring for
+                    <span>Carpal Tunnel Exercises</span>
+                </h2>
+
+                <p>
+                    Monitor hand movements, finger flexion, wrist angles
+                    and exercise performance using an intelligent
+                    multisensor glove.
+                </p>
+
+                <div class="feature-list">
+
+                    <div class="feature">
+                        <div class="feature-icon">◉</div>
+                        <div>
+                            <strong>Multisensor Monitoring</strong>
+                            <p>Track hand and wrist movements in real time.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">✦</div>
+                        <div>
+                            <strong>AI-Based Analysis</strong>
+                            <p>Analyze exercise performance intelligently.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">✓</div>
+                        <div>
+                            <strong>Exercise Tracking</strong>
+                            <p>Monitor repetitions and rehabilitation progress.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="copyright">
+                © 2026 GloveCare AI · AI Multisensor Glove System
+            </div>
+
+        </div>
+
+
+        <div class="login-right">
+
+            <div class="login-box">
+
+                <div class="mobile-brand">
+                    <div class="brand-icon">✦</div>
+                    <h1>GloveCare AI</h1>
+                </div>
+
+                <div class="login-header">
+                    <span class="welcome">WELCOME BACK</span>
+                    <h2>Sign in to your dashboard</h2>
+                    <p>Access your glove monitoring system</p>
+                </div>
+
+                <form id="loginForm">
+
+                    <div class="input-group">
+                        <label for="username">Username</label>
+
+                        <div class="input-wrapper">
+                            <span class="input-icon">◉</span>
+                            <input
+                                type="text"
+                                id="username"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password</label>
+
+                        <div class="input-wrapper">
+                            <span class="input-icon">●</span>
+
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                id="passwordToggle"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="login-options">
+                        <label class="remember">
+                            <input type="checkbox" id="rememberMe">
+                            <span>Remember me</span>
+                        </label>
+
+                        <a href="#" onclick="return false;">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <span>Sign In</span>
+                        <span class="arrow">→</span>
+                    </button>
+
+                    <div id="loginMessage" class="login-message"></div>
+
+                </form>
+
+               
+
+                <div class="security-note">
+                    <span>🔒</span>
+                    <span>Your monitoring data is securely handled.</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="js/login.js"></script>
+
+</body>
+</html>
