@@ -1,313 +1,591 @@
-import os
-import csv
-import math
+from pathlib import Path
+import sys
+import random
+import pandas as pd
 
-PROJECT_FOLDER = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
+
+# ============================================================
+# MAKE THE ai FOLDER AVAILABLE FOR IMPORTS
+# ============================================================
+
+AI_ROOT = Path(__file__).resolve().parent
+
+if str(AI_ROOT) not in sys.path:
+    sys.path.insert(0, str(AI_ROOT))
+
+
+from feature_extractor import (
+    extract_features,
+    SENSOR_COLUMNS,
+    WINDOW_SIZE
 )
 
-DATASET_FOLDER = os.path.join(
-    PROJECT_FOLDER,
-    "dataset"
+
+# ============================================================
+# PATHS
+# ============================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+RAW_ROOT = PROJECT_ROOT / "dataset"
+
+PROCESSED_ROOT = (
+    PROJECT_ROOT
+    / "ai"
+    / "dataset"
+    / "processed"
 )
 
-OUTPUT_FOLDER = os.path.join(
-    PROJECT_FOLDER,
-    "ai",
-    "dataset"
+PROCESSED_ROOT.mkdir(
+    parents=True,
+    exist_ok=True
 )
 
-OUTPUT_FILE = os.path.join(
-    OUTPUT_FOLDER,
-    "processed_windows.csv"
-)
 
-WINDOW_SIZE = 40
-STEP_SIZE = 20
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-SENSOR_COLUMNS = [
-    "t1", "t2", "t3", "t4", "t5",
-    "ax", "ay", "az",
-    "gx", "gy", "gz"
+CLASSES = [
+    "exercise_1_loose_fist",
+    "exercise_2_fingertip_touching",
+    "exercise_3_wrist_rotation",
+    "exercise_4_finger_tapping",
+    "exercise_5_hand_wave",
+    "idle",
 ]
 
-GOOD_RECORDINGS = {
-    "exercise_1_loose_fist": [4, 5, 6, 7, 8, 9],
-    "exercise_2_fingers_straight": [4, 5, 6, 7, 8, 9],
-    "exercise_3_wrist_clockwise": [4, 5, 6, 7, 8, 10],
-    "exercise_4_hand_wave": [4, 5, 6, 7, 8, 9],
-    "exercise_5_finger_typing": [4, 5, 6, 7, 8, 9],
-    "idle": [4, 5, 6, 7, 8, 9]
-}
+WINDOW_STEP = 20
+
+TEST_RECORDINGS_PER_CLASS = 2
+
+RANDOM_SEED = 42
 
 
-def read_recording(filename):
+# ============================================================
+# RANDOM SEED
+# ============================================================
+
+random.seed(RANDOM_SEED)
+
+
+# ============================================================
+# LOAD ONE RECORDING
+# ============================================================
+
+def load_recording(csv_path):
+
+    df = pd.read_csv(csv_path)
+
+    missing_columns = [
+        column
+        for column in SENSOR_COLUMNS
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+
+        print(
+            f"WARNING: Skipping {csv_path.name} "
+            f"because columns are missing: {missing_columns}"
+        )
+
+        return None
+
+    df = df[SENSOR_COLUMNS].copy()
+
+    for column in SENSOR_COLUMNS:
+
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
+
+    df = df.dropna().reset_index(drop=True)
+
+    return df
+
+
+# ============================================================
+# CREATE WINDOWS
+# ============================================================
+
+def create_windows(df):
+
+    windows = []
+
+    if len(df) < WINDOW_SIZE:
+        return windows
+
+    for start in range(
+        0,
+        len(df) - WINDOW_SIZE + 1,
+        WINDOW_STEP
+    ):
+
+        end = start + WINDOW_SIZE
+
+        window = df.iloc[start:end].copy()
+
+        windows.append(
+            (
+                start,
+                window
+            )
+        )
+
+    return windows
+
+
+# ============================================================
+# PROCESS RECORDINGS
+# ============================================================
+
+def process_recordings(
+    recordings,
+    label
+):
 
     rows = []
 
-    with open(filename, "r", newline="") as file:
+    for csv_path in recordings:
 
-        reader = csv.DictReader(file)
+        df = load_recording(csv_path)
 
-        for row in reader:
+        if df is None:
+            continue
+
+        if len(df) < WINDOW_SIZE:
+
+            print(
+                f"WARNING: Skipping {csv_path.name} "
+                f"because it has only {len(df)} samples."
+            )
+
+            continue
+
+        windows = create_windows(df)
+
+        # Unique ID for this complete recording
+        recording_id = (
+            f"{label}__{csv_path.stem}"
+        )
+
+        for window_start, window in windows:
 
             try:
 
-                values = []
+                features = extract_features(window)
 
-                for sensor in SENSOR_COLUMNS:
-                    values.append(float(row[sensor]))
+                row = dict(features)
 
-                rows.append(values)
+                # Metadata required for grouped validation
+                row["recording_id"] = recording_id
 
-            except (ValueError, KeyError, TypeError):
-                continue
+                row["label"] = label
+
+                row["window_start"] = window_start
+
+                rows.append(row)
+
+            except Exception as error:
+
+                print(
+                    f"WARNING: Feature extraction failed for "
+                    f"{csv_path.name}: {error}"
+                )
 
     return rows
 
 
-def calculate_features(window):
-
-    features = []
-
-    for sensor_index in range(len(SENSOR_COLUMNS)):
-
-        values = []
-
-        for row in window:
-            values.append(row[sensor_index])
-
-        mean_value = sum(values) / len(values)
-
-        variance = 0
-
-        for value in values:
-            variance += (value - mean_value) ** 2
-
-        variance = variance / len(values)
-
-        std_value = math.sqrt(variance)
-
-        minimum = min(values)
-        maximum = max(values)
-
-        value_range = maximum - minimum
-
-        first_value = values[0]
-        last_value = values[-1]
-
-        change = last_value - first_value
-
-        changes = []
-
-        for i in range(1, len(values)):
-            changes.append(
-                values[i] - values[i - 1]
-            )
-
-        absolute_changes = []
-
-        for change_value in changes:
-            absolute_changes.append(
-                abs(change_value)
-            )
-
-        if len(absolute_changes) > 0:
-            mean_abs_change = (
-                sum(absolute_changes)
-                / len(absolute_changes)
-            )
-
-            max_abs_change = max(
-                absolute_changes
-            )
-        else:
-            mean_abs_change = 0
-            max_abs_change = 0
-
-        features.append(mean_value)
-        features.append(std_value)
-        features.append(minimum)
-        features.append(maximum)
-        features.append(value_range)
-        features.append(first_value)
-        features.append(last_value)
-        features.append(change)
-        features.append(mean_abs_change)
-        features.append(max_abs_change)
-
-    return features
-
+# ============================================================
+# MAIN
+# ============================================================
 
 def main():
 
-    os.makedirs(
-        OUTPUT_FOLDER,
-        exist_ok=True
+    print("=" * 60)
+
+    print(
+        "GloveCare AI - Dataset Preprocessing"
+    )
+
+    print("=" * 60)
+
+    print()
+
+    print(
+        f"Raw dataset:       {RAW_ROOT}"
+    )
+
+    print(
+        f"Processed dataset: {PROCESSED_ROOT}"
     )
 
     print()
-    print("========================================")
-    print("     GLOVECARE AI PREPROCESSING")
-    print("========================================")
-    print()
 
-    all_windows = []
+
+    # ========================================================
+    # FIND ALL RECORDINGS
+    # ========================================================
+
+    all_recordings = {}
 
     total_recordings = 0
-    total_windows = 0
 
-    for label in GOOD_RECORDINGS:
+    for class_name in CLASSES:
 
-        print()
-        print("Class:", label)
+        class_dir = RAW_ROOT / class_name
 
-        folder = os.path.join(
-            DATASET_FOLDER,
-            label
-        )
-
-        recording_numbers = GOOD_RECORDINGS[label]
-
-        for recording_number in recording_numbers:
-
-            filename = (
-                f"{label}_{recording_number}.csv"
-            )
-
-            filepath = os.path.join(
-                folder,
-                filename
-            )
-
-            if not os.path.exists(filepath):
-
-                print(
-                    "WARNING: File not found:",
-                    filename
-                )
-
-                continue
-
-            rows = read_recording(filepath)
-
-            if len(rows) < WINDOW_SIZE:
-
-                print(
-                    "WARNING: Not enough samples:",
-                    filename
-                )
-
-                continue
-
-            recording_id = (
-                f"{label}_{recording_number}"
-            )
-
-            recording_windows = 0
-
-            start = 0
-
-            while start + WINDOW_SIZE <= len(rows):
-
-                window = rows[
-                    start:start + WINDOW_SIZE
-                ]
-
-                features = calculate_features(
-                    window
-                )
-
-                all_windows.append(
-                    (
-                        features,
-                        label,
-                        recording_id
-                    )
-                )
-
-                recording_windows += 1
-                total_windows += 1
-
-                start += STEP_SIZE
-
-            total_recordings += 1
+        if not class_dir.exists():
 
             print(
-                filename,
-                "| Samples:",
-                len(rows),
-                "| Windows:",
-                recording_windows
+                f"WARNING: Folder not found: {class_dir}"
             )
 
-    feature_count = len(
-        all_windows[0][0]
+            all_recordings[class_name] = []
+
+            continue
+
+        recordings = sorted(
+            class_dir.glob("*.csv")
+        )
+
+        all_recordings[class_name] = recordings
+
+        total_recordings += len(recordings)
+
+
+    print(
+        f"Total recordings found: {total_recordings}"
     )
 
-    header = []
+    print()
 
-    for sensor in SENSOR_COLUMNS:
 
-        header.append(sensor + "_mean")
-        header.append(sensor + "_std")
-        header.append(sensor + "_min")
-        header.append(sensor + "_max")
-        header.append(sensor + "_range")
-        header.append(sensor + "_first")
-        header.append(sensor + "_last")
-        header.append(sensor + "_change")
-        header.append(sensor + "_mean_abs_change")
-        header.append(sensor + "_max_abs_change")
+    # ========================================================
+    # RECORDING-LEVEL TRAIN / TEST SPLIT
+    # ========================================================
 
-    header.append("label")
-    header.append("recording_id")
+    train_recordings = {}
 
-    with open(
-        OUTPUT_FILE,
-        "w",
-        newline=""
-    ) as file:
+    test_recordings = {}
 
-        writer = csv.writer(file)
+    for class_name in CLASSES:
 
-        writer.writerow(header)
+        recordings = list(
+            all_recordings[class_name]
+        )
 
-        for features, label, recording_id in all_windows:
+        if len(recordings) == 0:
 
-            writer.writerow(
-                features
-                + [label, recording_id]
+            train_recordings[class_name] = []
+
+            test_recordings[class_name] = []
+
+            continue
+
+        random.shuffle(recordings)
+
+        if len(recordings) <= TEST_RECORDINGS_PER_CLASS:
+
+            test_count = 1
+
+        else:
+
+            test_count = TEST_RECORDINGS_PER_CLASS
+
+        test_set = recordings[:test_count]
+
+        train_set = recordings[test_count:]
+
+        train_recordings[class_name] = train_set
+
+        test_recordings[class_name] = test_set
+
+
+    # ========================================================
+    # PRINT TRAINING RECORDINGS
+    # ========================================================
+
+    print("TRAIN:")
+
+    for class_name in CLASSES:
+
+        print(
+            f"{class_name}: "
+            f"{len(train_recordings[class_name])}"
+        )
+
+    print()
+
+
+    # ========================================================
+    # PRINT TEST RECORDINGS
+    # ========================================================
+
+    print("TEST:")
+
+    for class_name in CLASSES:
+
+        print(
+            f"{class_name}: "
+            f"{len(test_recordings[class_name])}"
+        )
+
+    print()
+
+
+    # ========================================================
+    # SAVE RECORDING SPLIT
+    # ========================================================
+
+    train_recording_rows = []
+
+    for class_name in CLASSES:
+
+        for csv_path in train_recordings[class_name]:
+
+            train_recording_rows.append(
+                {
+                    "recording": csv_path.name,
+                    "path": str(csv_path),
+                    "label": class_name
+                }
             )
 
+
+    test_recording_rows = []
+
+    for class_name in CLASSES:
+
+        for csv_path in test_recordings[class_name]:
+
+            test_recording_rows.append(
+                {
+                    "recording": csv_path.name,
+                    "path": str(csv_path),
+                    "label": class_name
+                }
+            )
+
+
+    train_recording_df = pd.DataFrame(
+        train_recording_rows
+    )
+
+    test_recording_df = pd.DataFrame(
+        test_recording_rows
+    )
+
+
+    train_recording_df.to_csv(
+        PROCESSED_ROOT / "train_recordings.csv",
+        index=False
+    )
+
+    test_recording_df.to_csv(
+        PROCESSED_ROOT / "test_recordings.csv",
+        index=False
+    )
+
+
+    # ========================================================
+    # CREATE TRAINING FEATURES
+    # ========================================================
+
+    print("Creating training windows...")
+
+    train_rows = []
+
+    for class_name in CLASSES:
+
+        rows = process_recordings(
+            train_recordings[class_name],
+            class_name
+        )
+
+        train_rows.extend(rows)
+
+
+    # ========================================================
+    # CREATE TEST FEATURES
+    # ========================================================
+
+    print("Creating testing windows...")
+
+    test_rows = []
+
+    for class_name in CLASSES:
+
+        rows = process_recordings(
+            test_recordings[class_name],
+            class_name
+        )
+
+        test_rows.extend(rows)
+
+
+    # ========================================================
+    # CONVERT TO DATAFRAMES
+    # ========================================================
+
+    train_df = pd.DataFrame(
+        train_rows
+    )
+
+    test_df = pd.DataFrame(
+        test_rows
+    )
+
+
+    # ========================================================
+    # VALIDATE
+    # ========================================================
+
+    if train_df.empty:
+
+        raise RuntimeError(
+            "Training dataset is empty. "
+            "Check your raw CSV files and feature extractor."
+        )
+
+
+    if test_df.empty:
+
+        raise RuntimeError(
+            "Testing dataset is empty. "
+            "Check your raw CSV files and feature extractor."
+        )
+
+
+    # ========================================================
+    # KEEP METADATA IN A FIXED ORDER
+    # ========================================================
+
+    metadata_columns = [
+        "recording_id",
+        "label",
+        "window_start"
+    ]
+
+
+    feature_columns = [
+        column
+        for column in train_df.columns
+        if column not in metadata_columns
+    ]
+
+
+    # Make sure both datasets contain the same feature columns
+
+    missing_test_features = [
+        column
+        for column in feature_columns
+        if column not in test_df.columns
+    ]
+
+
+    if missing_test_features:
+
+        raise RuntimeError(
+            "Testing dataset is missing feature columns: "
+            f"{missing_test_features}"
+        )
+
+
+    train_df = train_df[
+        feature_columns + metadata_columns
+    ]
+
+
+    test_df = test_df[
+        feature_columns + metadata_columns
+    ]
+
+
+    # ========================================================
+    # SAVE PROCESSED DATA
+    # ========================================================
+
+    train_path = (
+        PROCESSED_ROOT / "train.csv"
+    )
+
+    test_path = (
+        PROCESSED_ROOT / "test.csv"
+    )
+
+
+    train_df.to_csv(
+        train_path,
+        index=False
+    )
+
+    test_df.to_csv(
+        test_path,
+        index=False
+    )
+
+
+    # ========================================================
+    # FINAL SUMMARY
+    # ========================================================
+
     print()
-    print("========================================")
-    print("       PREPROCESSING COMPLETE")
-    print("========================================")
+
+    print("=" * 60)
+
+    print(
+        "PREPROCESSING COMPLETE"
+    )
+
+    print("=" * 60)
+
     print()
 
     print(
-        "Recordings used:",
-        total_recordings
+        f"Training windows: {len(train_df)}"
     )
 
     print(
-        "Windows created:",
-        total_windows
+        f"Testing windows : {len(test_df)}"
     )
 
     print(
-        "Features per window:",
-        feature_count
+        f"Features/window : {len(feature_columns)}"
+    )
+
+    print(
+        f"Training recordings: "
+        f"{train_df['recording_id'].nunique()}"
+    )
+
+    print(
+        f"Testing recordings : "
+        f"{test_df['recording_id'].nunique()}"
     )
 
     print()
-    print("Output file:")
-    print(OUTPUT_FILE)
+
+    print("Saved training data:")
+
+    print(train_path)
+
     print()
 
+    print("Saved testing data:")
+
+    print(test_path)
+
+    print()
+
+    print("=" * 60)
+
+
+# ============================================================
+# RUN
+# ============================================================
 
 if __name__ == "__main__":
     main()

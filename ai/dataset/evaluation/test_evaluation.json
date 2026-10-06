@@ -1,0 +1,109 @@
+{
+    "accuracy": 0.9950980392156863,
+    "balanced_accuracy": 0.9950980392156863,
+    "precision_weighted": 0.9952380952380951,
+    "recall_weighted": 0.9950980392156863,
+    "f1_weighted": 0.9950969788737473,
+    "confusion_matrix": [
+        [
+            33,
+            1,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            34,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            34,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            34,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            0,
+            34,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            0,
+            0,
+            34
+        ]
+    ],
+    "classification_report": "                               precision    recall  f1-score   support\n\n        exercise_1_loose_fist       1.00      0.97      0.99        34\nexercise_2_fingertip_touching       0.97      1.00      0.99        34\n    exercise_3_wrist_rotation       1.00      1.00      1.00        34\n    exercise_4_finger_tapping       1.00      1.00      1.00        34\n         exercise_5_hand_wave       1.00      1.00      1.00        34\n                         idle       1.00      1.00      1.00        34\n\n                     accuracy                           1.00       204\n                    macro avg       1.00      1.00      1.00       204\n                 weighted avg       1.00      1.00      1.00       204\n",
+    "per_class_report": {
+        "exercise_1_loose_fist": {
+            "precision": 1.0,
+            "recall": 0.9705882352941176,
+            "f1-score": 0.9850746268656716,
+            "support": 34.0
+        },
+        "exercise_2_fingertip_touching": {
+            "precision": 0.9714285714285714,
+            "recall": 1.0,
+            "f1-score": 0.9855072463768116,
+            "support": 34.0
+        },
+        "exercise_3_wrist_rotation": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 34.0
+        },
+        "exercise_4_finger_tapping": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 34.0
+        },
+        "exercise_5_hand_wave": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 34.0
+        },
+        "idle": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 34.0
+        },
+        "accuracy": 0.9950980392156863,
+        "macro avg": {
+            "precision": 0.9952380952380953,
+            "recall": 0.9950980392156863,
+            "f1-score": 0.9950969788737473,
+            "support": 204.0
+        },
+        "weighted avg": {
+            "precision": 0.9952380952380951,
+            "recall": 0.9950980392156863,
+            "f1-score": 0.9950969788737473,
+            "support": 204.0
+        }
+    }
+}

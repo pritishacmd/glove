@@ -1,0 +1,18 @@
+{
+    "selected_model": "Random Forest",
+    "training_windows": 816,
+    "training_recordings": 48,
+    "feature_count": 249,
+    "classes": [
+        "exercise_1_loose_fist",
+        "exercise_2_fingertip_touching",
+        "exercise_3_wrist_rotation",
+        "exercise_4_finger_tapping",
+        "exercise_5_hand_wave",
+        "idle"
+    ],
+    "cv_mean_accuracy": 0.9818300653594771,
+    "cv_std_accuracy": 0.022483660130718962,
+    "cv_mean_macro_f1": 0.9802231879568024,
+    "cv_std_macro_f1": 0.024649480471073924
+}

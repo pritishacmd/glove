@@ -1,275 +1,206 @@
-import serial
 import csv
-import os
 import time
+from pathlib import Path
+from datetime import datetime
+
+import serial
 
 PORT = "COM6"
 BAUD_RATE = 115200
+RECORD_SECONDS = 20
+COUNTDOWN_SECONDS = 3
 
-RECORDING_DURATION = 20
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+RAW_ROOT = PROJECT_ROOT / "dataset"
 
-DATASET_FOLDER = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "dataset"
-)
+CLASSES = [
+    ("1", "exercise_1_loose_fist"),
+    ("2", "exercise_2_fingertip_touching"),
+    ("3", "exercise_3_wrist_rotation"),
+    ("4", "exercise_4_finger_tapping"),
+    ("5", "exercise_5_hand_wave"),
+    ("6", "idle"),
+]
 
-classes = {
-    "1": "exercise_1_loose_fist",
-    "2": "exercise_2_fingers_straight",
-    "3": "exercise_3_wrist_clockwise",
-    "4": "exercise_4_hand_wave",
-    "5": "exercise_5_finger_typing",
-    "6": "idle"
-}
+HEADER = [
+    "timestamp",
+    "t1", "t2", "t3", "t4", "t5",
+    "ax", "ay", "az",
+    "gx", "gy", "gz",
+    "label",
+]
 
 
-def choose_class():
+def next_filename(folder, label):
+    number = 1
 
-    print()
-    print("========================================")
-    print("       GLOVECARE AI DATA COLLECTION")
-    print("========================================")
-    print()
+    while True:
+        path = folder / f"{label}_{number}.csv"
 
-    print("1. Loose Fist")
-    print("2. Fingers Straight")
-    print("3. Wrist Clockwise")
-    print("4. Hand Wave")
-    print("5. Finger Typing")
-    print("6. Idle")
-    print()
+        if not path.exists():
+            return path
 
-    choice = input("Enter choice (1-6): ")
+        number += 1
 
-    if choice not in classes:
 
-        print("Invalid choice.")
+def parse_data_line(line):
+    parts = line.strip().split(",")
 
+    if len(parts) != 13:
         return None
 
-    return classes[choice]
+    if parts[0] != "DATA":
+        return None
+
+    try:
+        values = [float(value) for value in parts[1:12]]
+    except ValueError:
+        return None
+
+    return values
 
 
-def collect_data(label):
+def collect_recording(label):
+    folder = RAW_ROOT / label
+    folder.mkdir(parents=True, exist_ok=True)
 
-    folder = os.path.join(
-        DATASET_FOLDER,
-        label
-    )
+    output_path = next_filename(folder, label)
 
-    os.makedirs(
-        folder,
+    print()
+    print("=" * 60)
+    print(f"Recording: {label}")
+    print(f"Output   : {output_path}")
+    print("=" * 60)
+
+    for remaining in range(COUNTDOWN_SECONDS, 0, -1):
+        print(f"Starting in {remaining}...")
+        time.sleep(1)
+
+    print("RECORDING NOW - perform the exercise!")
+
+    rows = []
+    start_time = time.monotonic()
+
+    try:
+        ser = serial.Serial(
+            PORT,
+            BAUD_RATE,
+            timeout=0.2
+        )
+    except Exception as error:
+        raise RuntimeError(
+            f"Could not open {PORT}. "
+            f"Close Serial Monitor/Plotter and try again.\n"
+            f"Error: {error}"
+        )
+
+    time.sleep(1)
+    ser.reset_input_buffer()
+
+    try:
+        while time.monotonic() - start_time < RECORD_SECONDS:
+            raw = ser.readline().decode(
+                "utf-8",
+                errors="ignore"
+            ).strip()
+
+            if not raw:
+                continue
+
+            values = parse_data_line(raw)
+
+            if values is None:
+                continue
+
+            timestamp = datetime.now().isoformat(
+                timespec="milliseconds"
+            )
+
+            rows.append([
+                timestamp,
+                *values,
+                label
+            ])
+
+    finally:
+        ser.close()
+
+    with output_path.open(
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+        writer = csv.writer(file)
+        writer.writerow(HEADER)
+        writer.writerows(rows)
+
+    print(f"Finished. Samples collected: {len(rows)}")
+    print(f"Saved: {output_path}")
+
+    return output_path, len(rows)
+
+
+def main():
+    RAW_ROOT.mkdir(
+        parents=True,
         exist_ok=True
     )
 
-    file_number = 1
+    print("=" * 70)
+    print("GLOVECARE AI - REAL SENSOR DATA COLLECTION")
+    print("=" * 70)
 
-    while os.path.exists(
-        os.path.join(
-            folder,
-            f"{label}_{file_number}.csv"
+    print(f"Serial port : {PORT}")
+    print(f"Baud rate   : {BAUD_RATE}")
+    print(f"Duration    : {RECORD_SECONDS} seconds")
+
+    print()
+    print("IMPORTANT:")
+    print("Only real ESP8266 + TTP223 + MPU6050 data is recorded.")
+    print("No random or simulated sensor values are used.")
+    print()
+
+    while True:
+        print("Choose class:")
+
+        for key, label in CLASSES:
+            print(f"{key}. {label}")
+
+        print("q. Quit")
+
+        choice = input("\nEnter choice: ").strip().lower()
+
+        if choice == "q":
+            break
+
+        selected = None
+
+        for key, label in CLASSES:
+            if choice == key:
+                selected = label
+                break
+
+        if selected is None:
+            print("Invalid choice.")
+            continue
+
+        try:
+            collect_recording(selected)
+
+        except Exception as error:
+            print()
+            print(f"ERROR: {error}")
+
+        again = input(
+            "\nPress Enter to record another, "
+            "or type q to quit: "
         )
-    ):
-        file_number += 1
 
-    filename = os.path.join(
-        folder,
-        f"{label}_{file_number}.csv"
-    )
+        if again.strip().lower() == "q":
+            break
 
-    print()
-    print("Selected class:", label)
-    print("Recording duration:", RECORDING_DURATION, "seconds")
-    print("Saving data to:", filename)
-    print()
-
-    print("Get ready...")
-
-    for i in range(3, 0, -1):
-
-        print(i)
-
-        time.sleep(1)
-
-    print()
-    print(">>> RECORDING STARTED <<<")
-    print("Perform the selected movement now.")
-    print("Recording will automatically stop after 20 seconds.")
-    print()
-
-    serial_port = None
-    sample_count = 0
-
-    try:
-
-        serial_port = serial.Serial(
-            PORT,
-            BAUD_RATE,
-            timeout=1
-        )
-
-        time.sleep(2)
-
-        start_time = time.time()
-
-        with open(
-            filename,
-            "w",
-            newline=""
-        ) as file:
-
-            writer = csv.writer(file)
-
-            writer.writerow([
-                "timestamp",
-                "t1",
-                "t2",
-                "t3",
-                "t4",
-                "t5",
-                "ax",
-                "ay",
-                "az",
-                "gx",
-                "gy",
-                "gz",
-                "label"
-            ])
-
-            while True:
-
-                elapsed_time = time.time() - start_time
-
-                if elapsed_time >= RECORDING_DURATION:
-                    break
-
-                line = serial_port.readline().decode(
-                    "utf-8",
-                    errors="ignore"
-                ).strip()
-
-                if not line:
-                    continue
-
-                if not line.startswith("DATA,"):
-                    continue
-
-                values = line.split(",")
-
-                if len(values) != 13:
-                    continue
-
-                try:
-
-                    int(values[1])
-                    int(values[2])
-                    int(values[3])
-                    int(values[4])
-                    int(values[5])
-                    int(values[6])
-                    int(values[7])
-                    int(values[8])
-                    int(values[9])
-                    int(values[10])
-                    int(values[11])
-                    int(values[12])
-
-                except ValueError:
-
-                    continue
-
-                writer.writerow([
-                    values[1],
-                    values[2],
-                    values[3],
-                    values[4],
-                    values[5],
-                    values[6],
-                    values[7],
-                    values[8],
-                    values[9],
-                    values[10],
-                    values[11],
-                    values[12],
-                    label
-                ])
-
-                sample_count += 1
-
-                if sample_count % 20 == 0:
-
-                    elapsed = time.time() - start_time
-                    remaining = RECORDING_DURATION - elapsed
-
-                    if remaining < 0:
-                        remaining = 0
-
-                    print(
-                        "Samples:",
-                        sample_count,
-                        "| Time remaining:",
-                        f"{remaining:.1f}",
-                        "seconds"
-                    )
-
-    except KeyboardInterrupt:
-
-        print()
-        print("Recording manually stopped.")
-
-    except serial.SerialException as e:
-
-        print()
-        print("ERROR: Could not open", PORT)
-        print()
-        print(e)
-        print()
-        print("Make sure:")
-        print("1. ESP8266 is connected")
-        print("2. The port is COM6")
-        print("3. Serial Monitor is CLOSED")
-
-    except Exception as e:
-
-        print()
-        print("ERROR:")
-        print(e)
-
-    finally:
-
-        if serial_port is not None:
-            serial_port.close()
-
-        print()
-        print(">>> RECORDING FINISHED <<<")
-        print()
-        print("Saved file:")
-        print(filename)
-        print()
-        print("Total samples:", sample_count)
-        print("Expected approximately:", RECORDING_DURATION * 20)
-        print()
+    print("\nData collection stopped.")
 
 
-while True:
-
-    label = choose_class()
-
-    if label is None:
-        continue
-
-    collect_data(label)
-
-    print()
-
-    again = input(
-        "Collect another recording? (y/n) "
-    )
-
-    if again.lower() != "y":
-        break
-
-print()
-print("========================================")
-print("       DATA COLLECTION FINISHED")
-print("========================================")
+if __name__ == "__main__":
+    main()

@@ -1,215 +1,421 @@
 import serial
-import joblib
-import numpy as np
-import os
-import math
 import time
+import csv
+import os
+import joblib
+import pandas as pd
 
-PORT = "COM6"
+from ai.feature_extractor import extract_features, SENSOR_COLUMNS, WINDOW_SIZE
+
+
+# ============================================================
+# SERIAL SETTINGS
+# ============================================================
+
+SERIAL_PORT = "COM6"
 BAUD_RATE = 115200
 
-WINDOW_SIZE = 40
 
-MODEL_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "model",
-    "glovecare_model.pkl"
-)
+# ============================================================
+# MODEL SETTINGS
+# ============================================================
 
-model = joblib.load(MODEL_FILE)
+MODEL_PATH = r".\ai\model\glovecare_model.pkl"
 
-SENSORS = [
-    "t1", "t2", "t3", "t4", "t5",
-    "ax", "ay", "az",
-    "gx", "gy", "gz"
-]
-
-NAMES = {
-    "exercise_1_loose_fist": "Loose Fist",
-    "exercise_2_fingers_straight": "Fingers Straight",
-    "exercise_3_wrist_clockwise": "Wrist Clockwise",
-    "exercise_4_hand_wave": "Hand Wave",
-    "exercise_5_finger_typing": "Finger Typing",
-    "idle": "Idle"
-}
+CAPTURE_PATH = r".\ai\live_test_window.csv"
 
 
-def calculate_features(window):
+# ============================================================
+# PARSE ESP8266 DATA
+# ============================================================
 
-    features = []
+def parse_sensor_line(line):
 
-    for sensor_index in range(11):
+    line = line.strip()
 
-        values = []
+    if not line:
+        return None
 
-        for row in window:
-            values.append(row[sensor_index])
+    if not line.startswith("DATA,"):
+        return None
 
-        mean_value = sum(values) / len(values)
+    parts = line.split(",")
 
-        variance = 0
+    if len(parts) != 13:
+        return None
 
-        for value in values:
-            variance += (value - mean_value) ** 2
+    # Ignore CSV header
+    if parts[1] == "TIME":
+        return None
 
-        variance = variance / len(values)
+    try:
 
-        std_value = math.sqrt(variance)
+        data = {
+            "time": parts[1],
 
-        minimum = min(values)
-        maximum = max(values)
+            "t1": float(parts[2]),
+            "t2": float(parts[3]),
+            "t3": float(parts[4]),
+            "t4": float(parts[5]),
+            "t5": float(parts[6]),
 
-        value_range = maximum - minimum
+            "ax": float(parts[7]),
+            "ay": float(parts[8]),
+            "az": float(parts[9]),
 
-        first_value = values[0]
-        last_value = values[-1]
+            "gx": float(parts[10]),
+            "gy": float(parts[11]),
+            "gz": float(parts[12])
+        }
 
-        change = last_value - first_value
+        return data
 
-        changes = []
+    except ValueError:
 
-        for i in range(1, len(values)):
-            changes.append(
-                values[i] - values[i - 1]
-            )
+        return None
 
-        absolute_changes = []
 
-        for change_value in changes:
-            absolute_changes.append(
-                abs(change_value)
-            )
+# ============================================================
+# LOAD MODEL
+# ============================================================
 
-        mean_abs_change = (
-            sum(absolute_changes)
-            / len(absolute_changes)
+def load_model():
+
+    if not os.path.exists(MODEL_PATH):
+
+        print()
+        print("ERROR: Model file not found.")
+        print()
+        print("Expected:")
+        print(MODEL_PATH)
+        print()
+
+        return None
+
+    package = joblib.load(MODEL_PATH)
+
+    model = package["model"]
+    feature_columns = package["feature_columns"]
+    classes = package["classes"]
+
+    print()
+    print("MODEL LOADED")
+    print("-" * 70)
+    print(f"Model type       : {type(model).__name__}")
+    print(f"Features expected: {len(feature_columns)}")
+    print(f"Window size      : {package['window_size']}")
+    print(f"Classes          : {list(classes)}")
+    print("-" * 70)
+
+    return package
+
+
+# ============================================================
+# SAVE RAW LIVE WINDOW
+# ============================================================
+
+def save_window(rows):
+
+    os.makedirs(os.path.dirname(CAPTURE_PATH), exist_ok=True)
+
+    fieldnames = [
+        "timestamp",
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "ax",
+        "ay",
+        "az",
+        "gx",
+        "gy",
+        "gz"
+    ]
+
+    with open(
+        CAPTURE_PATH,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+
+        writer = csv.DictWriter(
+            file,
+            fieldnames=fieldnames
         )
 
-        max_abs_change = max(
-            absolute_changes
-        )
+        writer.writeheader()
 
-        features.append(mean_value)
-        features.append(std_value)
-        features.append(minimum)
-        features.append(maximum)
-        features.append(value_range)
-        features.append(first_value)
-        features.append(last_value)
-        features.append(change)
-        features.append(mean_abs_change)
-        features.append(max_abs_change)
+        for row in rows:
 
-    return features
+            writer.writerow({
+                "timestamp": row["time"],
+                "t1": row["t1"],
+                "t2": row["t2"],
+                "t3": row["t3"],
+                "t4": row["t4"],
+                "t5": row["t5"],
+                "ax": row["ax"],
+                "ay": row["ay"],
+                "az": row["az"],
+                "gx": row["gx"],
+                "gy": row["gy"],
+                "gz": row["gz"]
+            })
+
+    print()
+    print(f"Raw live window saved to:")
+    print(CAPTURE_PATH)
 
 
-print()
-print("========================================")
-print("       GLOVECARE LIVE AI")
-print("========================================")
-print()
+# ============================================================
+# PREDICT LIVE WINDOW
+# ============================================================
 
-print("Connecting to ESP8266 on", PORT)
+def predict_window(rows, package):
 
-try:
-    serial_port = serial.Serial(
-        PORT,
-        BAUD_RATE,
-        timeout=1
+    model = package["model"]
+    feature_columns = package["feature_columns"]
+
+    # Convert the 40 real sensor samples into a DataFrame
+    df = pd.DataFrame(rows)
+
+    # Keep EXACTLY the same raw sensor columns used during training
+    df = df[SENSOR_COLUMNS]
+
+    # Extract the same 249 features used during training
+    features = extract_features(df)
+
+    # Arrange features in EXACT trained order
+    feature_values = {
+        column: features[column]
+        for column in feature_columns
+    }
+
+    feature_df = pd.DataFrame(
+        [feature_values],
+        columns=feature_columns
     )
 
+    # Prediction
+    prediction = model.predict(feature_df)[0]
+
+    probabilities = model.predict_proba(feature_df)[0]
+
+    classes = list(model.classes_)
+
+    # Sort probabilities from highest to lowest
+    results = sorted(
+        zip(classes, probabilities),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    confidence = max(probabilities) * 100
+
+    print()
+    print("=" * 70)
+    print("LIVE ML PREDICTION")
+    print("=" * 70)
+
+    print()
+    print(f"Prediction : {prediction}")
+    print(f"Confidence : {confidence:.2f}%")
+
+    print()
+    print("ALL CLASS PROBABILITIES")
+    print("-" * 70)
+
+    for class_name, probability in results:
+
+        print(
+            f"{class_name:<35} "
+            f"{probability * 100:>7.2f}%"
+        )
+
+    print("-" * 70)
+
+    print()
+    print(f"Samples used  : {len(df)}")
+    print(f"Features used : {len(feature_columns)}")
+
+    print("=" * 70)
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+
+    print("=" * 70)
+    print("GloveCare AI - LIVE MODEL DIAGNOSTIC TEST")
+    print("=" * 70)
+
+    print()
+    print(f"Serial port : {SERIAL_PORT}")
+    print(f"Baud rate   : {BAUD_RATE}")
+    print(f"Window size : {WINDOW_SIZE} samples")
+    print()
+
+    # --------------------------------------------------------
+    # Load model
+    # --------------------------------------------------------
+
+    package = load_model()
+
+    if package is None:
+        return
+
+    # --------------------------------------------------------
+    # Check window size
+    # --------------------------------------------------------
+
+    if WINDOW_SIZE != 40:
+
+        print()
+        print("ERROR: Expected window size is 40.")
+        print(f"Current window size: {WINDOW_SIZE}")
+        return
+
+    # --------------------------------------------------------
+    # Connect to ESP8266
+    # --------------------------------------------------------
+
+    print()
+    print("Connecting to ESP8266...")
+
+    try:
+
+        ser = serial.Serial(
+            SERIAL_PORT,
+            BAUD_RATE,
+            timeout=1
+        )
+
+    except serial.SerialException as error:
+
+        print()
+        print("ERROR: Could not open COM6.")
+        print()
+        print(error)
+        print()
+        print("Make sure:")
+        print("1. ESP8266 is connected.")
+        print("2. COM6 is correct.")
+        print("3. Arduino Serial Monitor is CLOSED.")
+        print("4. No other program is using COM6.")
+
+        return
+
+    # Give serial connection time to initialize
     time.sleep(2)
 
-    print("Connected successfully.")
-    print()
-    print("Collecting 40 real sensor samples...")
-    print()
-
-except Exception as e:
+    # Remove old buffered data
+    ser.reset_input_buffer()
 
     print()
-    print("ERROR connecting to ESP8266:")
-    print(e)
-    exit()
+    print("ESP8266 connected successfully.")
 
+    print()
+    print("=" * 70)
+    print("IMPORTANT")
+    print("=" * 70)
+    print()
+    print("We will collect EXACTLY 40 consecutive REAL sensor samples.")
+    print()
+    print("Perform ONE exercise continuously while the samples are")
+    print("being collected.")
+    print()
+    print("For the first test, perform:")
+    print()
+    print("        LOOSE FIST")
+    print()
+    print("Keep doing the exercise until collection finishes.")
+    print()
+    print("Do NOT use Arduino Serial Monitor.")
+    print()
+    print("=" * 70)
 
-window = []
+    input("Press ENTER when you are ready...")
 
-try:
+    print()
+    print("STARTING COLLECTION...")
+    print()
 
-    while True:
+    rows = []
 
-        line = serial_port.readline().decode(
-            "utf-8",
-            errors="ignore"
-        ).strip()
+    try:
 
-        if not line:
-            continue
+        while len(rows) < WINDOW_SIZE:
 
-        if not line.startswith("DATA,"):
-            continue
+            raw_line = ser.readline().decode(
+                "utf-8",
+                errors="ignore"
+            ).strip()
 
-        values = line.split(",")
+            if not raw_line:
+                continue
 
-        if len(values) != 13:
-            continue
+            data = parse_sensor_line(raw_line)
 
-        try:
+            if data is None:
+                continue
 
-            sensor_values = []
-
-            for i in range(2, 13):
-                sensor_values.append(
-                    float(values[i])
-                )
-
-        except ValueError:
-            continue
-
-        window.append(sensor_values)
-
-        if len(window) > WINDOW_SIZE:
-            window.pop(0)
-
-        if len(window) == WINDOW_SIZE:
-
-            features = calculate_features(
-                window
-            )
-
-            prediction = model.predict(
-                np.array([features])
-            )[0]
-
-            if hasattr(model, "predict_proba"):
-
-                probabilities = model.predict_proba(
-                    np.array([features])
-                )[0]
-
-                confidence = max(
-                    probabilities
-                ) * 100
-
-            else:
-                confidence = 0
+            rows.append(data)
 
             print(
-                "DETECTED:",
-                NAMES.get(
-                    prediction,
-                    prediction
-                ),
-                "| Confidence:",
-                f"{confidence:.1f}%"
+                f"Sample {len(rows):02d}/{WINDOW_SIZE}  "
+                f"T=["
+                f"{int(data['t1'])},"
+                f"{int(data['t2'])},"
+                f"{int(data['t3'])},"
+                f"{int(data['t4'])},"
+                f"{int(data['t5'])}"
+                f"]  "
+                f"GYRO=["
+                f"{int(data['gx'])},"
+                f"{int(data['gy'])},"
+                f"{int(data['gz'])}"
+                f"]"
             )
 
-except KeyboardInterrupt:
+        print()
+        print("=" * 70)
+        print("40 SAMPLES COLLECTED")
+        print("=" * 70)
 
-    print()
-    print("Live prediction stopped.")
+        # ----------------------------------------------------
+        # Save raw live data
+        # ----------------------------------------------------
 
-finally:
+        save_window(rows)
 
-    serial_port.close()
+        # ----------------------------------------------------
+        # Run ML prediction
+        # ----------------------------------------------------
+
+        predict_window(rows, package)
+
+    except KeyboardInterrupt:
+
+        print()
+        print()
+        print("Test stopped by user.")
+
+    finally:
+
+        if ser.is_open:
+            ser.close()
+
+        print()
+        print("COM6 disconnected.")
+
+
+# ============================================================
+# START PROGRAM
+# ============================================================
+
+if __name__ == "__main__":
+    main()

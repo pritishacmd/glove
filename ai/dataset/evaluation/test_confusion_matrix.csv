@@ -1,0 +1,7 @@
+Actual,exercise_1_loose_fist,exercise_2_fingertip_touching,exercise_3_wrist_rotation,exercise_4_finger_tapping,exercise_5_hand_wave,idle
+exercise_1_loose_fist,33,1,0,0,0,0
+exercise_2_fingertip_touching,0,34,0,0,0,0
+exercise_3_wrist_rotation,0,0,34,0,0,0
+exercise_4_finger_tapping,0,0,0,34,0,0
+exercise_5_hand_wave,0,0,0,0,34,0
+idle,0,0,0,0,0,34
