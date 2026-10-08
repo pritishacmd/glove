@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>GloveCare AI - Dashboard</title>
+    <title>GloveCare - Dashboard</title>
 
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
@@ -19,8 +19,8 @@
             <div class="brand-icon">✦</div>
 
             <div>
-                <h2>GloveCare <span>AI</span></h2>
-                <p>Multisensor System</p>
+                <h2>GloveCare</h2>
+                <p>Exercise Monitor</p>
             </div>
         </div>
 
@@ -43,11 +43,6 @@
             <a href="#exercises" class="nav-item">
                 <span class="nav-icon">✋</span>
                 <span>Exercises</span>
-            </a>
-
-            <a href="#analysis" class="nav-item">
-                <span class="nav-icon">✦</span>
-                <span>AI Analysis</span>
             </a>
 
             <a href="#history" class="nav-item">
@@ -116,8 +111,8 @@
             </div>
 
             <div class="page-heading">
-                <p>AI HEALTH MONITORING</p>
-                <h1>Dashboard</h1>
+                <p>SESSION</p>
+                <h1>Exercise session</h1>
             </div>
 
             <div class="topbar-right">
@@ -125,11 +120,6 @@
                 <div class="live-status">
                     <span id="systemStatusDot"></span>
                     <span id="systemStatus">Waiting for Glove</span>
-                </div>
-
-                <div class="notification">
-                    ♢
-                    <span class="notification-dot"></span>
                 </div>
 
                 <div class="profile">
@@ -161,29 +151,28 @@
 
                     <div class="hero-label">
                         <span></span>
-                        LIVE MONITORING
+                        CURRENT TASK
                     </div>
 
-                    <h2>
-                        Carpal Tunnel<br>
-                        <span>Exercise Monitoring</span>
-                    </h2>
+                    <h2>Do each exercise for 20 seconds</h2>
 
                     <p>
-                        Monitor hand movement, finger contact and wrist
-                        activity using real-time multisensor glove data.
+                        Press Start. Follow the instruction.
+                        The timer moves to the next exercise automatically.
                     </p>
 
                     <div class="hero-actions">
 
                         <button class="primary-btn" id="startExerciseBtn">
-                            <span>▶</span>
-                            Start Exercise Session
+                            Start session
+                        </button>
+
+                        <button class="secondary-btn" id="skipExerciseBtn">
+                            Skip
                         </button>
 
                         <button class="secondary-btn" id="viewSensorsBtn">
-                            View Live Sensors
-                            <span>→</span>
+                            View sensors
                         </button>
 
                     </div>
@@ -193,29 +182,12 @@
 
                 <div class="hero-right">
 
-                    <div class="hero-orbit orbit-one"></div>
-                    <div class="hero-orbit orbit-two"></div>
-
-                    <div class="hand-visual">
-
-                        <div class="hand-glow"></div>
-
-                        <div class="hand-symbol">
-                            ✋
-                        </div>
-
-                        <div class="finger-line line-one"></div>
-                        <div class="finger-line line-two"></div>
-                        <div class="finger-line line-three"></div>
-
-                    </div>
-
-                    <div class="sensor-floating sensor-float-one">
+                    <div class="task-reading">
                         <span>WRIST PITCH</span>
                         <strong id="heroWrist">--°</strong>
                     </div>
 
-                    <div class="sensor-floating sensor-float-two">
+                    <div class="task-reading">
                         <span>TOUCH</span>
                         <strong id="heroFlexion">-- / 5</strong>
                     </div>
@@ -237,7 +209,7 @@
                         <p>SESSION TIME</p>
                         <h3 id="sessionTime">00:00</h3>
                         <span class="positive" id="sessionStatus">
-                            ● Session not started
+                            Session not started
                         </span>
                     </div>
 
@@ -271,7 +243,7 @@
                         <p>GLOVE STATUS</p>
                         <h3 id="gloveStatus">Waiting</h3>
                         <span class="positive" id="gloveStatusText">
-                            ● No sensor stream
+                            No sensor stream
                         </span>
                     </div>
 
@@ -285,10 +257,10 @@
                     </div>
 
                     <div class="stat-content">
-                        <p>AI STATUS</p>
-                        <h3 id="aiStatus">Waiting</h3>
-                        <span class="positive" id="aiStatusText">
-                            ● Model integration pending
+                        <p>NEXT EXERCISE</p>
+                        <h3 id="nextChange">20s</h3>
+                        <span class="positive" id="nextChangeText">
+                            Start session
                         </span>
                     </div>
 
@@ -305,8 +277,8 @@
                     <div class="panel-header">
 
                         <div>
-                            <p class="panel-kicker">REAL-TIME DATA</p>
-                            <h2>Multisensor Monitoring</h2>
+                            <p class="panel-kicker">SENSORS</p>
+                            <h2>Sensor readings</h2>
                         </div>
 
                         <div class="live-pill">
@@ -431,7 +403,7 @@
                         <div class="sensor-card">
 
                             <div class="sensor-top">
-                                <span class="sensor-name">Touch Sensors</span>
+                                <span class="sensor-name">Touch T1-T5</span>
                                 <span class="sensor-status">TTP223</span>
                             </div>
 
@@ -455,21 +427,6 @@
                                 <span id="touch3">--</span>
                             </div>
 
-                        </div>
-
-
-                        <div class="sensor-card">
-
-                            <div class="sensor-top">
-                                <span class="sensor-name">Touch Sensors</span>
-                                <span class="sensor-status">TTP223</span>
-                            </div>
-
-                            <div class="sensor-value">
-                                <strong id="touchActive">--</strong>
-                                <span>active</span>
-                            </div>
-
                             <div class="sensor-footer">
                                 <span>T4</span>
                                 <span id="touch4">--</span>
@@ -491,100 +448,6 @@
 
                 </div>
 
-
-                <div class="panel ai-panel" id="analysis">
-
-                    <div class="panel-header">
-
-                        <div>
-                            <p class="panel-kicker">MACHINE LEARNING</p>
-                            <h2>AI Assessment</h2>
-                        </div>
-
-                        <div class="ai-icon">
-                            ✦
-                        </div>
-
-                    </div>
-
-
-                    <div class="ai-score">
-
-                        <div class="score-circle">
-
-                            <div>
-                                <strong id="aiScore">--</strong>
-                                <span id="aiScoreUnit">%</span>
-                            </div>
-
-                        </div>
-
-                        <div class="score-text">
-                            <strong id="predictionName">
-                                Waiting for prediction
-                            </strong>
-
-                            <p id="predictionText">
-                                Real sensor data will be sent to the AI model.
-                            </p>
-                        </div>
-
-                    </div>
-
-
-                    <div class="ai-message">
-
-                        <div class="message-icon" id="aiMessageIcon">
-                            ?
-                        </div>
-
-                        <div>
-                            <strong id="aiMessageTitle">
-                                AI model not connected
-                            </strong>
-
-                            <p id="aiMessageText">
-                                The dashboard is receiving hardware data,
-                                but exercise classification will begin after
-                                the Python AI service is integrated.
-                            </p>
-                        </div>
-
-                    </div>
-
-
-                    <div class="analysis-list">
-
-                        <div>
-                            <span>Sensor stream</span>
-                            <strong class="safe" id="analysisSensor">
-                                Waiting
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>AI model</span>
-                            <strong class="safe" id="analysisModel">
-                                Waiting
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>Exercise detection</span>
-                            <strong class="good" id="analysisExercise">
-                                Waiting
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <button class="analysis-btn" id="testFeedbackBtn">
-                        Test Feedback Audio
-                    </button>
-
-                </div>
-
             </section>
 
 
@@ -596,8 +459,8 @@
                     <div class="panel-header">
 
                         <div>
-                            <p class="panel-kicker">THERAPY PROGRAM</p>
-                            <h2>Exercise Progress</h2>
+                            <p class="panel-kicker">EXERCISES</p>
+                            <h2>Exercise progress</h2>
                         </div>
 
                         <span class="small-action" id="exerciseNumber">
@@ -621,7 +484,7 @@
                                 </h3>
 
                                 <p id="currentExerciseInstruction">
-                                    Press Start Exercise Session
+                                    Press Start session
                                 </p>
                             </div>
 
@@ -651,8 +514,8 @@
                         </div>
 
                         <div>
-                            <span>Duration</span>
-                            <strong id="currentExerciseTime">00:00</strong>
+                            <span>Elapsed</span>
+                            <strong id="currentExerciseTime">00:00 / 00:20</strong>
                         </div>
 
                         <div>
@@ -672,8 +535,8 @@
                     <div class="panel-header">
 
                         <div>
-                            <p class="panel-kicker">ACTIVITY</p>
-                            <h2>Recent Sessions</h2>
+                            <p class="panel-kicker">HISTORY</p>
+                            <h2>Recent sessions</h2>
                         </div>
 
                     </div>
@@ -689,7 +552,7 @@
 
                             <div class="session-info">
                                 <strong>No completed sessions</strong>
-                                <span>Your real exercise sessions will appear here.</span>
+                                <span>Completed sessions appear here.</span>
                             </div>
 
                             <div class="session-score">
@@ -711,8 +574,8 @@
                 <div class="panel-header">
 
                     <div>
-                        <p class="panel-kicker">HARDWARE</p>
-                        <h2>Glove Device Status</h2>
+                        <p class="panel-kicker">DEVICE</p>
+                        <h2>Glove status</h2>
                     </div>
 
                     <div class="device-connected" id="deviceConnection">
@@ -791,8 +654,8 @@
                 <div class="panel-header">
 
                     <div>
-                        <p class="panel-kicker">CONFIGURATION</p>
-                        <h2>System Settings</h2>
+                        <p class="panel-kicker">SETTINGS</p>
+                        <h2>Settings</h2>
                     </div>
 
                 </div>
@@ -800,7 +663,7 @@
                 <div class="settings-grid">
 
                     <div class="setting-card">
-                        <span>Notifications</span>
+                        <span>Sound cues</span>
 
                         <label class="switch">
                             <input type="checkbox" checked>
@@ -809,25 +672,12 @@
                     </div>
 
                     <div class="setting-card">
-                        <span>Live Sensor Updates</span>
+                        <span>Live sensor updates</span>
 
                         <label class="switch">
                             <input
                                 type="checkbox"
                                 id="liveSensorToggle"
-                                checked
-                            >
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="setting-card">
-                        <span>AI Monitoring</span>
-
-                        <label class="switch">
-                            <input
-                                type="checkbox"
-                                id="aiMonitoringToggle"
                                 checked
                             >
                             <span class="slider"></span>
@@ -840,8 +690,8 @@
 
 
             <footer>
-                <span>GloveCare AI</span>
-                <span>Multisensor Carpal Tunnel Exercise Monitoring System</span>
+                <span>GloveCare</span>
+                <span>Carpal tunnel exercise monitoring</span>
                 <span>v1.0.0</span>
             </footer>
 

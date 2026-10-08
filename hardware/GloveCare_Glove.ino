@@ -38,7 +38,7 @@ float roll = 0.0;
 
 unsigned long lastSensorRead = 0;
 
-const unsigned long sensorInterval = 200;
+const unsigned long sensorInterval = 40;
 
 
 void enableCors()
@@ -117,33 +117,29 @@ void readAllSensors()
 
 void sendSerialData()
 {
-  Serial.print("TOUCH: ");
-
-  for (int i = 0; i < 5; i++)
-  {
-    Serial.print("T");
-    Serial.print(i + 1);
-    Serial.print(":");
-    Serial.print(touchValues[i]);
-    Serial.print("  ");
-  }
-
-
-  Serial.print("| ACC: ");
-
+  Serial.print("DATA,");
+  Serial.print(millis());
+  Serial.print(",");
+  Serial.print(touchValues[0]);
+  Serial.print(",");
+  Serial.print(touchValues[1]);
+  Serial.print(",");
+  Serial.print(touchValues[2]);
+  Serial.print(",");
+  Serial.print(touchValues[3]);
+  Serial.print(",");
+  Serial.print(touchValues[4]);
+  Serial.print(",");
   Serial.print(ax);
-  Serial.print(" ");
+  Serial.print(",");
   Serial.print(ay);
-  Serial.print(" ");
+  Serial.print(",");
   Serial.print(az);
-
-
-  Serial.print(" | GYRO: ");
-
+  Serial.print(",");
   Serial.print(gx);
-  Serial.print(" ");
+  Serial.print(",");
   Serial.print(gy);
-  Serial.print(" ");
+  Serial.print(",");
   Serial.println(gz);
 }
 

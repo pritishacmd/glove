@@ -1,4 +1,5 @@
 import csv
+import re
 import time
 from pathlib import Path
 from datetime import datetime
@@ -30,6 +31,27 @@ HEADER = [
     "label",
 ]
 
+TOUCH_RE = re.compile(
+    r"TOUCH:\s+"
+    r"T1:(?P<t1>-?\d+(?:\.\d+)?)\s+"
+    r"T2:(?P<t2>-?\d+(?:\.\d+)?)\s+"
+    r"T3:(?P<t3>-?\d+(?:\.\d+)?)\s+"
+    r"T4:(?P<t4>-?\d+(?:\.\d+)?)\s+"
+    r"T5:(?P<t5>-?\d+(?:\.\d+)?)\s+\|\s+"
+    r"ACC:\s+(?P<ax>-?\d+(?:\.\d+)?)\s+"
+    r"(?P<ay>-?\d+(?:\.\d+)?)\s+"
+    r"(?P<az>-?\d+(?:\.\d+)?)\s+\|\s+"
+    r"GYRO:\s+(?P<gx>-?\d+(?:\.\d+)?)\s+"
+    r"(?P<gy>-?\d+(?:\.\d+)?)\s+"
+    r"(?P<gz>-?\d+(?:\.\d+)?)"
+)
+
+SENSOR_COLUMNS = [
+    "t1", "t2", "t3", "t4", "t5",
+    "ax", "ay", "az",
+    "gx", "gy", "gz",
+]
+
 
 def next_filename(folder, label):
     number = 1
@@ -43,7 +65,7 @@ def next_filename(folder, label):
         number += 1
 
 
-def parse_data_line(line):
+def parse_data_csv(line):
     parts = line.strip().split(",")
 
     if len(parts) != 13:
@@ -53,11 +75,30 @@ def parse_data_line(line):
         return None
 
     try:
-        values = [float(value) for value in parts[1:12]]
+        values = [float(value) for value in parts[2:13]]
     except ValueError:
         return None
 
     return values
+
+
+def parse_touch_debug(line):
+    match = TOUCH_RE.search(line.strip())
+
+    if match is None:
+        return None
+
+    try:
+        return [
+            float(match.group(column))
+            for column in SENSOR_COLUMNS
+        ]
+    except ValueError:
+        return None
+
+
+def parse_data_line(line):
+    return parse_data_csv(line) or parse_touch_debug(line)
 
 
 def collect_recording(label):
